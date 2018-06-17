@@ -1,0 +1,8 @@
+{
+  "name": "steam-auth-code",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/chrisxue815/steam-auth-code",
+  "author": "Chris Xue <chrisxue815@gmail.com>",
+  "license": "MIT"
+}
