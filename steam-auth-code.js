@@ -2,6 +2,7 @@
 
 export const TIME_INTERVAL_IN_SEC = 30;
 export const TIME_INTERVAL_IN_MS = TIME_INTERVAL_IN_SEC * 1000;
+const SPACE_PATTERN = new RegExp(/ /g);
 
 export class AuthCode {
     constructor(authCode, startTime) {
@@ -25,7 +26,7 @@ export function parseUrlParams() {
     if (!secret) {
         throw 'Error: you must specify URL parameter secret';
     }
-    secret = secret.replace(' ', '+');
+    secret = secret.replace(SPACE_PATTERN, '+');
 
     timeOffset = timeOffset
         ? parseInt(timeOffset)
