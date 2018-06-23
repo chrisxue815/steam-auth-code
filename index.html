@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://unpkg.com/@material/button@0.36.1/dist/mdc.button.min.css">
     <link rel="stylesheet" href="https://unpkg.com/@material/card@0.36.1/dist/mdc.card.min.css">
     <link rel="stylesheet" href="https://unpkg.com/@material/typography@0.35.0/dist/mdc.typography.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="index.css">
@@ -26,11 +27,16 @@
             </h2>
         </div>
         <div class="auth-code__secondary">
-            <div class="auth-code__code mdc-typography--headline2">{{authCode.authCode}}</div>
+            <div :id="getAuthCodeId(index)" class="auth-code__code mdc-typography--headline2">{{authCode.authCode}}
+            </div>
         </div>
         <div class="mdc-card__actions">
             <div class="mdc-card__action-buttons">
-                <button class="mdc-button mdc-card__action mdc-card__action--button">
+                <button class="auth-code__copy mdc-button mdc-card__action mdc-card__action--button"
+                        :data-clipboard-target="getAuthCodeIdSelector(index)"
+                        data-trigger="click"
+                        data-placement="bottom"
+                        data-title="Copied!">
                     <i class="material-icons mdc-button__icon">file_copy</i>
                     Copy
                 </button>
@@ -45,6 +51,10 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script src="https://unpkg.com/clipboard@2.0.1/dist/clipboard.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
 
 <script type="module">
     import * as SteamAuthCode from './steam-auth-code.js';
@@ -69,6 +79,8 @@
 
             this.update();
             setInterval(this.update, 1000);
+
+            this.initCopyButtons();
         },
         methods: {
             async update() {
@@ -95,6 +107,27 @@
                     },
                 ];
             },
+            getAuthCodeId(index) {
+                return `auth-code__code-${index}`;
+            },
+            getAuthCodeIdSelector(index) {
+                return `#${this.getAuthCodeId(index)}`;
+            },
+            initCopyButtons() {
+                $('.auth-code__copy')
+                    .tooltip()
+                    .on('shown.bs.tooltip', e => {
+                        setTimeout(() => {
+                            $(e.target).tooltip('hide');
+                        }, 1000);
+                    });
+
+                let clipboard = new ClipboardJS('.auth-code__copy');
+
+                clipboard.on('success', e => {
+                    e.clearSelection();
+                });
+            }
         },
     });
 
