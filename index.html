@@ -1,7 +1,104 @@
-<div id="auth-code"></div>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Steam auth code generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/6.0.0/normalize.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/@material/button@0.36.1/dist/mdc.button.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/@material/card@0.36.1/dist/mdc.card.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/@material/typography@0.35.0/dist/mdc.typography.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+
+<div class="auth-code" id="app">
+    <div v-for="(authCode, index) in authCodes" class="auth-code__card mdc-card">
+        <div class="auth-code__primary">
+            <h2 class="auth-code__title mdc-typography--subtitle1">
+                <span v-if="index == 0">Current</span>
+                <span v-else>Next</span>
+            </h2>
+        </div>
+        <div class="auth-code__secondary">
+            <div class="auth-code__code mdc-typography--headline2">{{authCode.authCode}}</div>
+        </div>
+        <div class="mdc-card__actions">
+            <div class="mdc-card__action-buttons">
+                <button class="mdc-button mdc-card__action mdc-card__action--button">
+                    <i class="material-icons mdc-button__icon">file_copy</i>
+                    Copy
+                </button>
+            </div>
+        </div>
+        <div class="auth-code__footnote">
+            <div class="auth-code__progress mdc-typography--body2">
+                Expires in <span class="auth-code__remaining">{{authCode.remaining}}</span> sec
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
 
 <script type="module">
     import * as SteamAuthCode from './steam-auth-code.js';
 
-    SteamAuthCode.setAuthCode('#auth-code');
+    let app = new Vue({
+        el: '#app',
+        data() {
+            let dummyCode = new SteamAuthCode.AuthCode();
+            return {
+                authCodes: this.createAuthCodes(0, dummyCode, dummyCode),
+            };
+        },
+        async created() {
+            let params = SteamAuthCode.parseUrlParams();
+            this.secret = params.secret;
+            this.timeOffset = params.timeOffset;
+
+            let now = Date.now() + this.timeOffset;
+
+            this.currCode = await SteamAuthCode.getAuthCode(this.secret, now);
+            this.nextCode = await SteamAuthCode.getAuthCode(this.secret, now + SteamAuthCode.TIME_INTERVAL_IN_MS);
+
+            this.update();
+            setInterval(this.update, 1000);
+        },
+        methods: {
+            async update() {
+                let now = Date.now() + this.timeOffset;
+
+                if (now >= this.nextCode.startTime) {
+                    this.currCode = this.nextCode;
+                    this.nextCode = await SteamAuthCode.getAuthCode(this.secret, now + SteamAuthCode.TIME_INTERVAL_IN_MS);
+                }
+
+                this.authCodes = this.createAuthCodes(now, this.currCode, this.nextCode);
+            },
+            createAuthCodes(now, currCode, nextCode) {
+                let remaining = Math.floor((nextCode.startTime - now) / 1000);
+
+                return [
+                    {
+                        authCode: currCode.authCode,
+                        remaining: remaining,
+                    },
+                    {
+                        authCode: nextCode.authCode,
+                        remaining: remaining + SteamAuthCode.TIME_INTERVAL_IN_SEC,
+                    },
+                ];
+            },
+        },
+    });
+
 </script>
+
+</body>
+</html>

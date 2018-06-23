@@ -1,56 +1,54 @@
 'use strict';
 
 export const TIME_INTERVAL_IN_SEC = 30;
+export const TIME_INTERVAL_IN_MS = TIME_INTERVAL_IN_SEC * 1000;
 
-export async function setAuthCode(el) {
-    let msg = '';
-
-    try {
-        msg = await setAuthCodeInternal(el);
+export class AuthCode {
+    constructor(authCode, startTime) {
+        this.authCode = authCode;
+        this.startTime = startTime;
     }
-    catch (e) {
-        msg = e;
-    }
-
-    document.querySelector(el).textContent = msg;
 }
 
-async function setAuthCodeInternal() {
+export function parseUrlParams() {
     let searchParams = new URLSearchParams(window.location.search);
 
     // Required. Base64-encoded shared secret
     let secret = searchParams.get('secret');
 
-    // Optional, defaults to system time. Number of seconds since epoch
+    // Optional, defaults to system time. Number of milliseconds since epoch
     let time = searchParams.get('time');
 
-    // Optional, defaults to 0. This number of seconds will be added to time
+    // Optional, defaults to 0. This number of milliseconds will be added to time
     let timeOffset = searchParams.get('timeOffset');
 
     if (!secret) {
-        return 'Error: you must specify URL parameter secret';
+        throw 'Error: you must specify URL parameter secret';
     }
     secret = secret.replace(' ', '+');
 
-    time = time
-        ? parseInt(time)
-        : Math.floor(Date.now() / 1000);
+    timeOffset = timeOffset
+        ? parseInt(timeOffset)
+        : 0;
 
-    if (timeOffset) {
-        timeOffset = parseInt(timeOffset);
-        time += timeOffset;
+    if (time) {
+        timeOffset += parseInt(time) - Date.now();
     }
 
-    return await getAuthCode(secret, time);
+    return {secret, timeOffset};
 }
 
 export async function getAuthCode(secret, time) {
-    secret = base64ToU8Array(secret);
-    time = f64ToU64(Math.floor(time / TIME_INTERVAL_IN_SEC));
+    let secretU8 = base64ToU8Array(secret);
 
-    let rawCode = await getRawCode(secret, time);
+    let timeIndex = Math.floor(time / TIME_INTERVAL_IN_MS);
+    let startTime = timeIndex * TIME_INTERVAL_IN_MS;
+    let timeIndexU64 = f64ToU64(timeIndex);
 
-    return getAuthCodeFromRawCode(rawCode);
+    let rawCode = await getRawCode(secretU8, timeIndexU64);
+    let authCode = getAuthCodeFromRawCode(rawCode);
+
+    return new AuthCode(authCode, startTime);
 }
 
 function base64ToU8Array(base64) {
@@ -71,10 +69,10 @@ function f64ToU64(f64) {
     return u64;
 }
 
-async function getRawCode(secret, time) {
+async function getRawCode(secret, timeIndex) {
     let algo = {name: "HMAC", hash: "SHA-1"};
     let key = await crypto.subtle.importKey('raw', secret, algo, false, ["sign"]);
-    let hmac = await crypto.subtle.sign('HMAC', key, time);
+    let hmac = await crypto.subtle.sign('HMAC', key, timeIndex);
     hmac = new DataView(hmac);
 
     let start = hmac.getUint8(19) & 0x0F;
