@@ -27,7 +27,8 @@
             </h2>
         </div>
         <div class="auth-code__secondary">
-            <div :id="getAuthCodeId(index)" class="auth-code__code mdc-typography--headline2">{{authCode.authCode}}
+            <div :id="getAuthCodeId(index)" :class="{'auth-code__code--transparent': isTransparent}"
+                 class="auth-code__code mdc-typography--headline2">{{authCode.authCode}}
             </div>
         </div>
         <div class="mdc-card__actions">
@@ -65,6 +66,7 @@
             let dummyCode = new SteamAuthCode.AuthCode();
             return {
                 authCodes: this.createAuthCodes(0, dummyCode, dummyCode),
+                isTransparent: false,
             };
         },
         async created() {
@@ -85,16 +87,21 @@
         methods: {
             async update() {
                 let now = Date.now() + this.timeOffset;
+                this.authCodes = this.createAuthCodes(now, this.currCode, this.nextCode);
 
                 if (now >= this.nextCode.startTime) {
                     this.currCode = this.nextCode;
                     this.nextCode = await SteamAuthCode.getAuthCode(this.secret, now + SteamAuthCode.TIME_INTERVAL_IN_MS);
-                }
+                    this.isTransparent = true;
 
-                this.authCodes = this.createAuthCodes(now, this.currCode, this.nextCode);
+                    setTimeout(() => {
+                        this.authCodes = this.createAuthCodes(now, this.currCode, this.nextCode);
+                        this.isTransparent = false;
+                    }, 500);
+                }
             },
             createAuthCodes(now, currCode, nextCode) {
-                let remaining = Math.floor((nextCode.startTime - now) / 1000);
+                let remaining = Math.ceil((nextCode.startTime - now) / 1000) % 30;
 
                 return [
                     {

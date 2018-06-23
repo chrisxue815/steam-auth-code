@@ -32,6 +32,10 @@ body {
     transition: opacity 0.5s;
 }
 
+.auth-code__code--transparent {
+    opacity: 0;
+}
+
 .auth-code__footnote {
     padding: 0 1rem 8px;
     text-align: right;
