@@ -43,8 +43,8 @@
                 </button>
             </div>
         </div>
-        <div class="auth-code__footnote">
-            <div class="auth-code__progress mdc-typography--body2">
+        <div v-if="index == 0" class="auth-code__footnote">
+            <div class="auth-code__countdown mdc-typography--body2">
                 Expires in <span class="auth-code__remaining">{{authCode.remaining}}</span> sec
             </div>
         </div>

@@ -41,7 +41,7 @@ body {
     text-align: right;
 }
 
-.auth-code__progress {
+.auth-code__countdown {
     color: rgba(var(--mdc-theme-on-primary), .54);
 }
 
