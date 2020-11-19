@@ -59,7 +59,7 @@ function base64ToU8Array(base64) {
 function f64ToU64(f64) {
     let u64 = new DataView(new ArrayBuffer(8));
 
-    if (typeof BigInt !== 'undefined') {
+    if (typeof u64.setBigUint64 !== 'undefined' && typeof BigInt !== 'undefined') {
         u64.setBigUint64(0, BigInt(f64), false);
     }
     else {
